@@ -1,0 +1,22 @@
+{
+  "name": "planfix",
+  "version": "1.0.0",
+  "description": "Google-authenticated group planning with a responsive blue-and-lime interface",
+  "main": "index.js",
+  "scripts": {
+    "build": "esbuild src/entry.js --bundle --minify --outfile=dist/app.js --target=es2020 && esbuild src/setup.js --bundle --minify --outfile=dist/setup/setup.js --target=es2020",
+    "test": "node tests/connection.mjs && node tests/auth-return.mjs && node tests/ui.cjs && node tests/database.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.119.0",
+    "esbuild": "^0.28.2"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
+    "jsdom": "^31.0.0"
+  }
+}

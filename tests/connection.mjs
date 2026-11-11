@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import {checkConnection} from '../src/connection.mjs';
+import {isGoogleAccount,safeInvite} from '../src/auth-policy.mjs';
+const config={supabaseUrl:'https://example.supabase.co',supabasePublishableKey:'public-test-key'};
+const response=(ok,data)=>({ok,json:async()=>data});
+const denied={code:'42501',message:'permission denied for function dashboard'};
+const mock=({google=true,anonymous=false,db=denied,mode='google_only'}={})=>async url=>url.includes('/settings')?response(true,{external:{anonymous_users:anonymous,google}}):url.includes('auth_mode')?response(mode==='google_only',mode):response(false,db);
+assert.equal((await checkConnection({})).state,'unconfigured');
+assert.equal((await checkConnection(config,mock({google:false,anonymous:true}))).ready,false);
+assert.equal((await checkConnection(config,mock({db:{code:'PGRST202'}}))).ready,false);
+assert.equal((await checkConnection(config,mock({mode:null}))).ready,false);
+assert.equal((await checkConnection(config,mock({anonymous:false}))).ready,true);
+assert.equal((await checkConnection(config,mock({anonymous:true}))).ready,true); // Backend policy, not the provider toggle, enforces access.
+assert.equal((await checkConnection(config,mock({db:{code:'42501',message:'Invalid API key'}}))).ready,false);
+assert.equal((await checkConnection(config,async()=>{throw new Error('Network unavailable')})).state,'unreachable');
+assert.equal(isGoogleAccount({id:'a',is_anonymous:true,identities:[{provider:'google'}]}),false);
+assert.equal(isGoogleAccount({id:'a',is_anonymous:false,app_metadata:{provider:'google'},identities:[{provider:'email'}]}),false);
+assert.equal(isGoogleAccount({id:'a',is_anonymous:false,identities:[{provider:'google'}]}),true);
+assert.equal(safeInvite('a'.repeat(64)),'a'.repeat(64));assert.equal(safeInvite('https://evil.test'),null);
+console.log('Authentication: Google identity, non-anonymous user, Google-only database policy, invite format, and unavailable-service checks passed.');
